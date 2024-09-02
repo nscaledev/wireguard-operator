@@ -189,7 +189,16 @@ func (r *WireguardReconciler) updateWireguardPeers(ctx context.Context, req ctrl
 
 			usedIps = append(usedIps, ip)
 		}
+
+		if peer.Status.Status != v1alpha1.Ready {
+			peer.Status.Status = v1alpha1.Ready
+			peer.Status.Message = "Peer configured"
+			if err := r.Status().Update(ctx, &peer); err != nil {
+				return err
+			}
+		}
 	}
+
 	return nil
 }
 
@@ -288,6 +297,8 @@ func (r *WireguardReconciler) reconcilePeerConfSecret(ctx context.Context, req c
 //+kubebuilder:rbac:groups=vpn.wireguard-operator.io,resources=wireguards,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=vpn.wireguard-operator.io,resources=wireguards/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=vpn.wireguard-operator.io,resources=wireguards/finalizers,verbs=update
+//+kubebuilder:rbac:groups=vpn.wireguard-operator.io,resources=wireguardpeers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=vpn.wireguard-operator.io,resources=wireguardpeers/status,verbs=get;update;patch
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -653,9 +664,9 @@ func (r *WireguardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	//if err := r.updateWireguardPeers(ctx, req); err != nil {
-	//	return ctrl.Result{}, err
-	//}
+	if err := r.updateWireguardPeers(ctx, req); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if err := r.reconcilePeerConfSecret(ctx, req, wireguard, address, dnsAddress, dnsSearchDomain, string(secret.Data["publicKey"])); err != nil {
 		return ctrl.Result{}, err
