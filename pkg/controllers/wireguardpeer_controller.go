@@ -59,7 +59,10 @@ func (r *WireguardPeerReconciler) secretForPeer(m *v1alpha1.WireguardPeer, priva
 			Namespace: m.Namespace,
 			Labels:    ls,
 		},
-		Data: map[string][]byte{"privateKey": []byte(privateKey), "publicKey": []byte(publicKey)},
+		Data: map[string][]byte{
+			"privateKey": []byte(privateKey),
+			"publicKey":  []byte(publicKey),
+		},
 	}
 	// Set Nodered instance as the owner and controller
 	ctrl.SetControllerReference(m, dep, r.Scheme)
